@@ -7,3 +7,6 @@ Just another implementation of the variational autoencoder ([VAE](https://arxiv.
 `tensorflow_probability==0.17.0`
 
 `matplotlib==3.5.2` 
+
+## Usage
+`python train_VAE.py`
