@@ -12,6 +12,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 import tensorflow_datasets as tfds
 import matplotlib.pyplot as plt
+import argparse
 
 tfk = tf.keras
 tfkl = tf.keras.layers
@@ -64,11 +65,11 @@ class Encoder(layers.Layer):
                     loc=t[..., :latent_dim], scale_diag=tf.math.exp(t[..., latent_dim:]))),
             ]
             )
-        self.latent_dim = latent_dim
+        self._latent_dim = latent_dim
 
     @property
     def latent_dim(self):
-        return self.latent_dim
+        return self._latent_dim
 
     def call(self, inputs):
         pz_x = self.hidden_layers(inputs)
@@ -120,13 +121,24 @@ def preprocess_images(images):
     return np.where(images > .5, 1.0, 0.0).astype('float32')
 
 def main():
-    latent_dim = 15
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--latent_dim", default= 15, help="Dimensionality of z", type=int)
+    parser.add_argument("--epochs", default= 20, help="No of epochs", type=int)
+    parser.add_argument("--dset", default='mnist', choices=['mnist','fashion_mnist'], help="dataset to be used")
+    args = parser.parse_args()
+
+    
+    latent_dim = args.latent_dim
     vae = VAE(tfd.MultivariateNormalDiag, 
               Encoder(latent_dim = latent_dim),
               Decoder(latent_dim = latent_dim)
             )
-    
-    (train_images, _), (test_images, _) = tf.keras.datasets.mnist.load_data()
+
+    if args.dset == 'mnist':
+        (train_images, _), (test_images, _) = tf.keras.datasets.mnist.load_data()
+    elif args.dset == 'fashion_mnist':
+        (train_images, _), (test_images, _) = tf.keras.datasets.fashion_mnist.load_data()
+
     train_images = preprocess_images(train_images)
     test_images  = preprocess_images(test_images)
 
@@ -134,7 +146,7 @@ def main():
     
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
     
-    epochs = 20 
+    epochs = args.epochs 
     loss_metric = tf.keras.metrics.Mean()
 
     for epoch in range(epochs):
