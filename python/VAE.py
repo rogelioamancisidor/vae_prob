@@ -14,24 +14,29 @@ class VAE(tfk.Model):
                  pz,
                  encoder,
                  decoder,
-                 latent_size,
+                 #latent_size,
                  name = 'VAEprob',
                  **kwargs):
         super(VAE,self).__init__(name=name, **kwargs)
         self.pz = pz
         self.encoder = encoder
         self.decoder = decoder
-        self.latent_size = latent_size
+        self.latent_dim = encoder.latent_dim
         self.params = encoder.trainable_variables + decoder.trainable_variables
 
     def call(self, inputs, L=1):
+        # posterior approximation
         qz_x = self.encoder(inputs)
         zs  = qz_x.sample(L)
+
         for i in range(zs.shape[0]):
             z = zs[i,...] 
+
+            # generative model
             px_z = self.decoder(z)
-            
-            pz = self.pz(loc=tf.zeros_like(qz_x.mean()), scale_diag=tf.ones_like(qz_x.mean()))
+           
+            # prior
+            pz = self.pz(loc=0, scale_diag=tf.ones(self.latent_dim))
            
             # pz, qz_x, and px_z are all pdf's!
             elbo = px_z.log_prob(inputs) - tfd.kl_divergence(qz_x,pz) 
@@ -50,7 +55,7 @@ class VAE(tfk.Model):
     
     # use prior to generate. returns a density function 
     def generate(self, L=10):
-        pz = self.pz(loc=0, scale_diag=tf.ones(self.latent_size))
+        pz = self.pz(loc=0, scale_diag=tf.ones(self.latent_dim))
         z = pz.sample(L) 
         px_z = self.decoder(z)
         

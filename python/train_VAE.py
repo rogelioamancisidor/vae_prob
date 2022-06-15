@@ -64,6 +64,11 @@ class Encoder(layers.Layer):
                     loc=t[..., :latent_dim], scale_diag=tf.math.exp(t[..., latent_dim:]))),
             ]
             )
+        self.latent_dim = latent_dim
+
+    @property
+    def latent_dim(self):
+        return self.latent_dim
 
     def call(self, inputs):
         pz_x = self.hidden_layers(inputs)
@@ -115,11 +120,10 @@ def preprocess_images(images):
     return np.where(images > .5, 1.0, 0.0).astype('float32')
 
 def main():
-    latent_size = 15
+    latent_dim = 15
     vae = VAE(tfd.MultivariateNormalDiag, 
-              Encoder(),
-              Decoder(),
-              latent_size
+              Encoder(latent_dim = latent_dim),
+              Decoder(latent_dim = latent_dim)
             )
     
     (train_images, _), (test_images, _) = tf.keras.datasets.mnist.load_data()
